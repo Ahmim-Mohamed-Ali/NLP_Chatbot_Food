@@ -1,12 +1,32 @@
+import os
 import mysql.connector
+from urllib.parse import urlparse
 
+# Récupérer l'URL de la base de données à partir des variables d'environnement
+database_url = os.environ['JAWSDB_URL']
+#if database_url is None:
+#print("Utilisation de la base de données locale")
+    # Détails de la base de données locale
+"""
+username = "root"  # Remplacez par votre nom d'utilisateur
+password = "root"  # Remplacez par votre mot de passe
+host = "localhost"  # Utilisez "127.0.0.1" si nécessaire
+database = "pandeyji_eatery"
+"""
 
-# Connexion à la base de données
+    # Analyser l'URL pour obtenir les détails de connexion
+url_parts = urlparse(database_url)
+username = url_parts.username
+password = url_parts.password
+host = url_parts.hostname
+database = url_parts.path[1:]  # Supprimer le slash initial
+
+# Se connecter à la base de données MySQL
 cnx = mysql.connector.connect(
-    host="localhost",  # Remplace par l'hôte de ta base de données
-    user="root",  # Remplace par ton utilisateur MySQL
-    password="root",  # Remplace par ton mot de passe MySQL
-    database="pandeyji_eatery"  # Nom de ta base de données
+    user=username,
+    password=password,
+    host=host,
+    database=database
 )
 
 
