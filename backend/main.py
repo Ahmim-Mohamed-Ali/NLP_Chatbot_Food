@@ -1,11 +1,15 @@
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse,HTMLResponse
 import os
 from backend import generic_helper
 from backend import db_helper
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), '../frontend'))
 app = FastAPI()
+
+# Monter le dossier statique pour accéder aux fichiers CSS et images
+app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), '../frontend')), name="static")
 
 inprogress_orders={}
 
