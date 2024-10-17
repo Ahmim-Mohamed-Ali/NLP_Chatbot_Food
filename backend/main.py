@@ -88,7 +88,7 @@ def add_to_order(paramaters:dict,session_id:str):
             existing_order = new_food_dict
 
         r.set(session_id, json.dumps(existing_order))
-        result= generic_helper.get_str_from_food_dict(inprogress_orders[session_id])
+        result= generic_helper.get_str_from_food_dict(existing_order)
         fulfillment_text = f"So Far you have this order {result}. Do You need Anything Else ?"
 
     return JSONResponse(content={
