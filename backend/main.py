@@ -3,6 +3,13 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse,HTMLResponse
 import os
+import redis,json
+
+
+# Connexion à Redis en utilisant l'URL
+redis_url = os.getenv('REDIS_URL', 'rediss://:p9278aa16bc31d9abb9ba61c4048c79694a7e6eda94cc40f07075f0940b8a58a8@ec2-44-221-1-111.compute-1.amazonaws.com:30850')  # Utiliser l'URL de Redis sur Heroku
+r = redis.StrictRedis.from_url(redis_url)
+
 from backend import generic_helper
 from backend import db_helper
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), '../frontend'))
@@ -69,11 +76,18 @@ def add_to_order(paramaters:dict,session_id:str):
     if len(food_items) != len(quantities):
         fulfillment_text = "Sorry I didn't understand. Can you please specify food items and quantities clearly?"
     else:
-        new_food_dict=dict(zip(food_items,quantities))
-        if session_id in inprogress_orders:
-            inprogress_orders[session_id].update(new_food_dict)
+        new_food_dict = dict(zip(food_items, quantities))
+
+        # Récupérer la commande en cours depuis Redis
+        existing_order = r.get(session_id)
+
+        if existing_order:
+            existing_order = json.loads(existing_order)
+            existing_order.update(new_food_dict)
         else:
-            inprogress_orders[session_id]=new_food_dict
+            existing_order = new_food_dict
+
+        r.set(session_id, json.dumps(existing_order))
         result= generic_helper.get_str_from_food_dict(inprogress_orders[session_id])
         fulfillment_text = f"So Far you have this order {result}. Do You need Anything Else ?"
 
@@ -83,18 +97,25 @@ def add_to_order(paramaters:dict,session_id:str):
     })
 
 
-def remove_from_order(parameters:dict,session_id:str):
-    if session_id not in inprogress_orders:
+def remove_from_order(parameters: dict, session_id: str):
+    # Récupérer la commande en cours depuis Redis
+    existing_order = r.get(session_id)
+
+    # Si aucune commande n'existe pour cette session
+    if not existing_order:
         return JSONResponse(content={
-            "fulfillmentText": "I'm having a trouble finding your order. Sorry! Can you place a new order please?"
+            "fulfillmentText": "I'm having trouble finding your order. Sorry! Can you place a new order please?"
         })
 
+    # Charger la commande à partir de Redis (elle est stockée en tant que chaîne JSON)
+    current_order = json.loads(existing_order)
+
     food_items = parameters["food-items"]
-    current_order = inprogress_orders[session_id]
 
     removed_items = []
     no_such_items = []
 
+    # Parcourir les articles à supprimer
     for item in food_items:
         if item not in current_order:
             no_such_items.append(item)
@@ -102,43 +123,46 @@ def remove_from_order(parameters:dict,session_id:str):
             removed_items.append(item)
             del current_order[item]
 
-    fulfillment_text=""
+    fulfillment_text = ""
     if len(removed_items) > 0:
-        fulfillment_text = f'Removed {",".join(removed_items)} from your order!'
+        fulfillment_text = f'Removed {", ".join(removed_items)} from your order!'
 
     if len(no_such_items) > 0:
-        fulfillment_text = f' Your current order does not have {",".join(no_such_items)}'
+        fulfillment_text += f' Your current order does not have {", ".join(no_such_items)}'
 
-    if len(current_order.keys()) == 0:
+    # Vérifier si la commande est maintenant vide
+    if len(current_order) == 0:
         fulfillment_text += " Your order is empty!"
+        # Supprimer la commande de Redis si elle est vide
+        r.delete(session_id)
     else:
+        # Si la commande n'est pas vide, mettre à jour la commande dans Redis
+        r.set(session_id, json.dumps(current_order))
         order_str = generic_helper.get_str_from_food_dict(current_order)
         fulfillment_text += f" Here is what is left in your order: {order_str}"
 
-    return JSONResponse(content={
-        "fulfillmentText": fulfillment_text
-    })
+    return JSONResponse(content={"fulfillmentText": fulfillment_text})
 
 
 def complete_order(parameters:dict,session_id:str):
-    if session_id not in inprogress_orders:
-        fulfillment_text="I'm having a trouble finding your order. Sorry Can you place an other"
-    else:
-        order=inprogress_orders[session_id]
-        order_id=save_to_db(order)
-        print(order_id)
-        if order_id==-1:
-            fulfillment_text = "Sorry I Couldn't place your order . PlEASE TRY AGAIN"
-        else:
-            order_total= db_helper.get_total_order_price(order_id)
-            fulfillment_text = f"Awesome. We have placed your order. " \
-                               f"Here is your order id # {order_id}. " \
-                               f"Your order total is {order_total} which you can pay at the time of delivery!"
-            del inprogress_orders[session_id]
+    existing_order = r.get(session_id)
 
-    return JSONResponse(content={
-            "fulfillmentText": fulfillment_text
-    })
+    if not existing_order:
+        fulfillment_text = "I'm having trouble finding your order. Can you place a new order?"
+    else:
+        order = json.loads(existing_order)
+        order_id = save_to_db(order)
+
+        if order_id == -1:
+            fulfillment_text = "Sorry, I couldn't place your order. Please try again."
+        else:
+            order_total = db_helper.get_total_order_price(order_id)
+            fulfillment_text = f"Awesome! Your order ID is #{order_id}. The total is {order_total}."
+
+            # Supprimer la commande après l'avoir complétée
+            r.delete(session_id)
+
+    return JSONResponse(content={"fulfillmentText": fulfillment_text})
 
 
 def save_to_db(order: dict):
