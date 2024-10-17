@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 import generic_helper
 import db_helper
-app = FastAPI(debug=True)
+app = FastAPI()
 
 inprogress_orders={}
 @app.get("/")  # Endpoint pour tester GET
