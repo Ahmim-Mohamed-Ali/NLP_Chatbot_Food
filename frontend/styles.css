@@ -76,3 +76,24 @@ section img {
     width: 100%;
     height: auto;
 }
+
+.chatbot {
+    display: none; /* Hide the chatbot by default */
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+.chatbot-button {
+    background-color: #007BFF; /* Button color */
+    color: white; /* Button text color */
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.chatbot-button:hover {
+    background-color: #0056b3; /* Darker shade on hover */
+}

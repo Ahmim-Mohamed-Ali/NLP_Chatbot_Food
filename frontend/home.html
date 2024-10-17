@@ -1,53 +1,92 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" type="text/css" href="/static/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <title>Restaurant Website</title>
+    <style>
+        .chatbot {
+            display: none; /* Hide the chatbot by default */
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .chatbot-button {
+            background-color: #007BFF; /* Button color */
+            color: white; /* Button text color */
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .chatbot-button:hover {
+            background-color: #0056b3; /* Darker shade on hover */
+        }
+    </style>
 </head>
 <body>
-	<div class="container">
-    <header>
-        <nav>
-            <a href="#home">HOME</a> |
-            <a href="#menu">MENU</a> |
-            <a href="#location">LOCATION</a> |
-            <a href="#aboutus">ABOUT US</a> |
-            <a href="#contactus">CONTACT US</a>
-        </nav>
-    </header>
+    <div class="container">
+        <header>
+            <nav>
+                <a href="#home">HOME</a> |
+                <a href="#menu">MENU</a> |
+                <a href="#location">LOCATION</a> |
+                <a href="#aboutus">ABOUT US</a> |
+                <a href="#contactus">CONTACT US</a>
+            </nav>
+        </header>
 
-    <section id="home">
-		<img src="/static/banner.jpg" >
-        <!-- Add images here -->
-    </section>
+        <section id="home">
+            <img src="/static/banner.jpg" alt="Restaurant Banner">
+            <!-- Add images here -->
+        </section>
 
-    <section id="menu">
-        <h2>Our Menu</h2>
-        <div class="grid-container">
-        <img src="/static/menu1.jpg" alt="Menu item 1">
-        <img src="/static/menu2.jpg" alt="Menu item 2">
-        <img src="/static/menu3.jpg" alt="Menu item 3">
+        <section id="menu">
+            <h2>Our Menu</h2>
+            <div class="grid-container">
+                <img src="/static/menu1.jpg" alt="Menu item 1">
+                <img src="/static/menu2.jpg" alt="Menu item 2">
+                <img src="/static/menu3.jpg" alt="Menu item 3">
+            </div>
+        </section>
+
+        <section id="location">
+            <h2>Location Of Our Restaurant</h2>
+            <p>36925 Hollywood Blvd, Hollywood, CA 90028</p>
+            <!-- Add map widget here -->
+        </section>
+
+        <section id="contactus">
+            <h2>Contact Us</h2>
+            <p>Got questions? Want to place an order? Call us at +91791234567 or email us at info@americanfastfood.com</p>
+        </section>
+
+        <!-- Button to open the chatbot -->
+        <button class="chatbot-button" onclick="toggleChatbot()">Chat with us!</button>
+
+        <!-- Chatbot iframe -->
+        <div class="chatbot" id="chatbot">
+            <iframe
+                allow="microphone;"
+                width="350"
+                height="430"
+                src="https://console.dialogflow.com/api-client/demo/embedded/1f050fe6-4c99-40ba-9e26-b2ae1e2a567a">
+            </iframe>
+        </div>
     </div>
-    </section>
 
-    <section id="location">
-        <h2>Location</h2>
-        <p>38 Patli Gali, Mumbai</p>
-        <!-- Add map widget here -->
-    </section>
-
-    <section id="contactus">
-        <h2>Contact Us</h2>
-        <p>Got questions? Want to place an order? Call us at +91791234567 or email us at info@atliqfastfood.com</p>
-    </section>
-
-	
-<iframe
-    allow="microphone;"
-    width="350"
-    height="430"
-    src="https://console.dialogflow.com/api-client/demo/embedded/1f050fe6-4c99-40ba-9e26-b2ae1e2a567a">
-</iframe>
-	</div>
+    <script>
+        function toggleChatbot() {
+            var chatbot = document.getElementById("chatbot");
+            if (chatbot.style.display === "none") {
+                chatbot.style.display = "block"; // Show the chatbot
+            } else {
+                chatbot.style.display = "none"; // Hide the chatbot
+            }
+        }
+    </script>
 </body>
 </html>
