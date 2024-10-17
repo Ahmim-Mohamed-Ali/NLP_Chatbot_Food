@@ -50,13 +50,7 @@ footer {
     width: 100%;
 }
 
-.chat-bot {
-    position: fixed;
-    right: 20px;
-    bottom: 20px;
-    border: none;
-    z-index: 1000; 
-}
+
 .container {
     margin: 0 auto;
     max-width: 1200px; /* or any other value */
@@ -83,15 +77,23 @@ section img {
     border: 1px solid #ccc;
     border-radius: 5px;
     padding: 10px;
+    position: fixed; /* Fixes position to the side */
+    right: 20px; /* Space from the right edge */
+    bottom: 20px; /* Space from the bottom edge */
+    z-index: 1000; /* Ensure it's on top of other elements */
 }
 
 .chatbot-button {
+    position: fixed; /* Keep button fixed */
+    right: 20px; /* Space from the right edge */
+    bottom: 80px; /* Space from the bottom edge, above the chatbot */
     background-color: #007BFF; /* Button color */
     color: white; /* Button text color */
     border: none;
     padding: 10px 20px;
     border-radius: 5px;
     cursor: pointer;
+    z-index: 1000; /* Ensure it's on top of other elements */
 }
 
 .chatbot-button:hover {
