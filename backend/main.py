@@ -1,13 +1,17 @@
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import JSONResponse,HTMLResponse
+import os
 from backend import generic_helper
 from backend import db_helper
+templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), '../frontend'))
 app = FastAPI()
 
 inprogress_orders={}
-@app.get("/")  # Endpoint pour tester GET
-async def get_root():
-    return {"message": "This is a GET response"}
+
+@app.get("/", response_class=HTMLResponse)  # Endpoint pour la page d'accueil
+async def get_root(request: Request):
+    return templates.TemplateResponse("home.html", {"request": request})
 
 
 
