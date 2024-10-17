@@ -3,8 +3,13 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse,HTMLResponse
 import os
+import logging
 import redis,json
 
+# Configuration du logging pour afficher dans la console
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+logger = logging.getLogger(__name__)
 
 # Connexion à Redis en utilisant l'URL
 redis_url = os.getenv('REDIS_URL', 'rediss://:p9278aa16bc31d9abb9ba61c4048c79694a7e6eda94cc40f07075f0940b8a58a8@ec2-44-221-1-111.compute-1.amazonaws.com:30850')  # Utiliser l'URL de Redis sur Heroku
@@ -69,12 +74,16 @@ def track_order(parameters:dict,session_id:str):
         # "outputContexts": output_contexts  # Echoing back the output contexts if needed
     })
 
-def add_to_order(paramaters:dict,session_id:str):
-    food_items = paramaters["food-items"]
-    quantities = paramaters["number"]
+
+def add_to_order(parameters: dict, session_id: str):
+    logger.info(f"Ajout d'articles à la commande pour la session {session_id}: {parameters}")
+
+    food_items = parameters["food-items"]
+    quantities = parameters["number"]
 
     if len(food_items) != len(quantities):
         fulfillment_text = "Sorry I didn't understand. Can you please specify food items and quantities clearly?"
+        logger.warning("Nombre d'articles et de quantités ne correspond pas.")
     else:
         new_food_dict = dict(zip(food_items, quantities))
 
@@ -84,16 +93,18 @@ def add_to_order(paramaters:dict,session_id:str):
         if existing_order:
             existing_order = json.loads(existing_order)
             existing_order.update(new_food_dict)
+            logger.info(f"Commande existante mise à jour: {existing_order}")
         else:
             existing_order = new_food_dict
+            logger.info("Création d'une nouvelle commande.")
 
         r.set(session_id, json.dumps(existing_order))
-        result= generic_helper.get_str_from_food_dict(existing_order)
+        result = generic_helper.get_str_from_food_dict(existing_order)
         fulfillment_text = f"So Far you have this order {result}. Do You need Anything Else ?"
 
+    logger.info(f"Réponse à l'utilisateur: {fulfillment_text}")
     return JSONResponse(content={
         "fulfillmentText": fulfillment_text
-        # "outputContexts": output_contexts  # Echoing back the output contexts if needed
     })
 
 
