@@ -4,6 +4,7 @@ from urllib.parse import urlparse
 
 # Récupérer l'URL de la base de données à partir des variables d'environnement
 database_url = os.environ['JAWSDB_URL']
+#database_url="mysql://vfms6u9c1z6xuj9l:hqjwhl6irlskqlb0@d6vscs19jtah8iwb.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/l1jbflb7xwa579ey"
 #if database_url is None:
 #print("Utilisation de la base de données locale")
     # Détails de la base de données locale
@@ -21,14 +22,26 @@ password = url_parts.password
 host = url_parts.hostname
 database = url_parts.path[1:]  # Supprimer le slash initial
 
-# Se connecter à la base de données MySQL
-cnx = mysql.connector.connect(
-    user=username,
-    password=password,
-    host=host,
-    database=database
-)
+def connect_to_db():
+    try:
+        cnx = mysql.connector.connect(
+            user=username,
+            password=password,
+            host=host,
+            database=database
+        )
+        return cnx
+    except mysql.connector.Error as err:
+        print(f"Erreur de connexion à la base de données : {err}")
+        return None
 
+def check_db_connection():
+    conn = connect_to_db()
+    if conn:
+        print("Connecté à la base de données avec succès")
+        conn.close()  # Ferme la connexion après vérification
+    else:
+        print("Erreur de connexion à la base de données")
 
 def insert_order_item(food_item, quantity, order_id):
     try:

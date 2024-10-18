@@ -2,6 +2,8 @@ from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse,HTMLResponse
+from backend import generic_helper
+from backend import db_helper
 import os
 import logging
 import redis,json
@@ -23,8 +25,18 @@ try:
 except redis.exceptions.ConnectionError as e:
     print(f"Erreur de connexion : {e}")
 
-from backend import generic_helper
-from backend import db_helper
+
+
+# Vérification de la connexion à la base de données
+def check_db_connection():
+    conn = db_helper.connect_to_db()
+    if conn:
+        logger.info("Connecté à la base de données avec succès")
+        conn.close()  # Ferme la connexion après vérification
+    else:
+        logger.error("Erreur de connexion à la base de données")
+
+check_db_connection()  # Appel de la fonction lors du démarrage
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), '../frontend'))
 app = FastAPI()
 
