@@ -14,7 +14,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Connexion à Redis en utilisant l'URL
-redis_url = os.getenv('REDIS_URL', 'rediss://:p9278aa16bc31d9abb9ba61c4048c79694a7e6eda94cc40f07075f0940b8a58a8@ec2-44-221-1-111.compute-1.amazonaws.com:30850')  # Utiliser l'URL de Redis sur Heroku
+#redis_url = os.getenv('REDIS_URL', 'rediss://:p9278aa16bc31d9abb9ba61c4048c79694a7e6eda94cc40f07075f0940b8a58a8@ec2-44-221-1-111.compute-1.amazonaws.com:30850')  # Utiliser l'URL de Redis sur Heroku
+redis_url='rediss://:p9278aa16bc31d9abb9ba61c4048c79694a7e6eda94cc40f07075f0940b8a58a8@ec2-44-221-1-111.compute-1.amazonaws.com:30850'
 r = redis.StrictRedis.from_url(
     redis_url,
 ssl_cert_reqs=None )
@@ -27,16 +28,9 @@ except redis.exceptions.ConnectionError as e:
 
 
 
-# Vérification de la connexion à la base de données
-def check_db_connection():
-    conn = db_helper.connect_to_db()
-    if conn:
-        logger.info("Connecté à la base de données avec succès")
-        conn.close()  # Ferme la connexion après vérification
-    else:
-        logger.error("Erreur de connexion à la base de données")
 
-check_db_connection()  # Appel de la fonction lors du démarrage
+
+db_helper.check_db_connection()  # Appel de la fonction lors du démarrage
 templates = Jinja2Templates(directory=os.path.join(os.path.dirname(__file__), '../frontend'))
 app = FastAPI()
 
@@ -72,7 +66,7 @@ async def root(request: Request):
         'order.complete - context: ongoing-order': complete_order,
         'track.order-context:ongoing-tracking': track_order
     }
-
+    print("recu intent",intent)
     return intent_handler_dict[intent](parameters,session_id)
 
 
@@ -83,7 +77,9 @@ def track_order(parameters:dict,session_id:str):
     status = db_helper.get_order_status(id)
     print(f"Order Status: {status}")
 
-    if status:
+    if status==-1:
+        fulfillment_text = f"There was an issue connecting to the database. Please try again later."
+    elif status is not None:
         fulfillment_text=f" Votre Commande Numéroe {id} est actuellement : {status}"
     else:
         fulfillment_text = f" Votre Commande Numéroe {id} n'a pas été trouvée"
@@ -175,7 +171,7 @@ def remove_from_order(parameters: dict, session_id: str):
     return JSONResponse(content={"fulfillmentText": fulfillment_text})
 
 
-def complete_order(parameters:dict,session_id:str):
+def complete_order(parameters: dict, session_id: str):
     existing_order = r.get(session_id)
 
     if not existing_order:
@@ -188,7 +184,10 @@ def complete_order(parameters:dict,session_id:str):
             fulfillment_text = "Sorry, I couldn't place your order. Please try again."
         else:
             order_total = db_helper.get_total_order_price(order_id)
-            fulfillment_text = f"Awesome! Your order ID is #{order_id}. The total is {order_total}."
+            if order_total == -1:
+                fulfillment_text = "There was an issue connecting to the database. Please try again later."
+            else:
+                fulfillment_text = f"Awesome! Your order ID is #{order_id}. The total is {order_total}."
 
             # Supprimer la commande après l'avoir complétée
             r.delete(session_id)
@@ -199,18 +198,28 @@ def complete_order(parameters:dict,session_id:str):
 def save_to_db(order: dict):
     next_order_id = db_helper.get_next_order_id()
 
-    # Insert individual items along with quantity in orders table
-    for food_item, quantity in order.items():
-        rcode = db_helper.insert_order_item(
-            food_item,
-            quantity,
-            next_order_id
-        )
+    # Si l'ID de commande suivant ne peut pas être obtenu, échouer immédiatement
+    if next_order_id == -1:
+        return -1
 
-        if rcode == -1:
+    try:
+        # Insérer chaque élément de la commande
+        for food_item, quantity in order.items():
+            rcode = db_helper.insert_order_item(
+                food_item,
+                quantity,
+                next_order_id
+            )
+
+            if rcode == -1:
+                return -1  # Retourne une erreur si l'insertion échoue
+
+        # Maintenant insérer le statut de suivi de commande
+        rcode2=db_helper.insert_order_tracking(next_order_id, "in progress")
+        if rcode2==-1:
             return -1
 
-    # Now insert order tracking status
-    db_helper.insert_order_tracking(next_order_id, "in progress")
-
-    return next_order_id
+        return next_order_id
+    except Exception as e:
+        print(f"Error saving order to database: {e}")
+        return -1
