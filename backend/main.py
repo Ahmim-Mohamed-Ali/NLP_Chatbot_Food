@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Connexion à Redis en utilisant l'URL
 #redis_url = os.getenv('REDIS_URL', 'rediss://:p9278aa16bc31d9abb9ba61c4048c79694a7e6eda94cc40f07075f0940b8a58a8@ec2-44-221-1-111.compute-1.amazonaws.com:30850')  # Utiliser l'URL de Redis sur Heroku
-redis_url='rediss://:p9278aa16bc31d9abb9ba61c4048c79694a7e6eda94cc40f07075f0940b8a58a8@ec2-44-221-1-111.compute-1.amazonaws.com:30850'
+redis_url=os.environ.get("REDIS_URL")
 r = redis.StrictRedis.from_url(
     redis_url,
 ssl_cert_reqs=None )
