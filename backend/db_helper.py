@@ -3,7 +3,7 @@ import mysql.connector
 from urllib.parse import urlparse
 
 # Récupérer l'URL de la base de données à partir des variables d'environnement
-database_url = os.environ['JAWSDB_URL']
+database_url = os.environ['JAWSDB_URL'] 
 #database_url="mysql://vfms6u9c1z6xuj9l:hqjwhl6irlskqlb0@d6vscs19jtah8iwb.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/l1jbflb7xwa579ey"
 # Analyser l'URL pour obtenir les détails de connexion
 url_parts = urlparse(database_url)
